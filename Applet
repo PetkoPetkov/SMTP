@@ -1,0 +1,450 @@
+
+import java.io.*;
+import java.net.*;
+import java.util.regex.*;
+import javax.swing.*;
+import java.awt.event.*;
+import java.awt.*;
+import javax.swing.JOptionPane;
+
+public class SendMail2 extends JApplet {
+	
+	static final int 	PORT = 25;
+	static  String MAILFROM, RCPT, BODY, SUBJECT ;
+	static final String SERVER = "smtp.mail.bg";
+	static final String HOST_NAME =	"puhiny";
+	static  String USER, PASS;
+	String USERNAME, PASSWORD;
+	
+	static BufferedReader in;
+	static PrintWriter out;
+	static Socket s;
+	
+	JPanel  panelObject; 
+	
+	JButton Clear, Send;
+	JLabel  labelNamePodatel, labelNamePoluchatel, labelSubject, labelCustMail, labelCustMail1, 
+			labelCustMail2, labelCustMail3, labelCustMail4, labelMailFrom, labelUser, labelPass;
+	
+	// Text fields
+	TextArea		textArea;
+	JTextField		textPodatel   = new JTextField(11), textPoluchatel= new JTextField(11),	textSubject   = new JTextField(40),	
+					textCustMail  = new JTextField(11),	textCustMail1 = new JTextField(11), textCustMail2 = new JTextField(11),	
+					textCustMail3 = new JTextField(11),	textCustMail4 = new JTextField(11),
+					textMailFrom  = new JTextField(11),	textUser  	  = new JTextField(11);
+	JPasswordField	textPass 	  = new JPasswordField(11);
+	
+	GridBagLayout      gbObject;
+	GridBagConstraints gbc;
+	
+	public   void init() {
+	
+		gbObject = new GridBagLayout();
+		gbc = new GridBagConstraints();
+		panelObject = (JPanel)getContentPane();
+		panelObject.setLayout(gbObject);
+		Clear = new JButton("Clear");
+		Send = new JButton("Send");
+		
+		// Labels
+		labelNamePodatel = new JLabel("Име на подател:");
+		labelNamePoluchatel = new JLabel("Име на получател:");
+		labelMailFrom = new JLabel("E-mail от:");
+		labelCustMail = new JLabel("E-mail до: ");
+		labelCustMail1 = new JLabel("Копие до: ");
+		labelCustMail2 = new JLabel("Копие до: ");
+		labelCustMail3 = new JLabel("Копие до: ");
+		labelCustMail4 = new JLabel("Копие до: ");
+		labelSubject = new JLabel("Тема ");
+		textArea = new TextArea(" Ако нямате регистриран email, може да използвате тези по подразбиране. " +
+								"\n Email адреса трябва да има разрешен SMTP достъп." +
+								"\n Поле 'Email от:' и поле 'Потребител:' трябва да съдържат едно и също име"
+								+ ",\n а Поле 'Email от:' може да бъде празно", 22, 66);	
+		labelUser = new JLabel("Потребил:");
+		labelPass = new JLabel("Парола:");
+		
+		
+		
+		gbc.insets = new Insets(0,6,0,0);
+		gbc.gridx=1;
+		gbc.gridy=0;
+		gbObject.setConstraints(labelNamePodatel,gbc);
+		panelObject.add(labelNamePodatel);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=0;
+		gbObject.setConstraints(textPodatel,gbc);
+		panelObject.add(textPodatel);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		
+		gbc.insets = new Insets(0,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=1;
+		gbObject.setConstraints(labelMailFrom,gbc);
+		panelObject.add(labelMailFrom);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(0,0,0,0);
+		gbc.gridx=2;
+		gbc.gridy=1;
+		gbObject.setConstraints(textMailFrom,gbc);
+		panelObject.add(textMailFrom);
+		
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(0,0,0,130);
+		gbc.gridx=4;
+		gbc.gridy=0;
+		gbObject.setConstraints(labelNamePoluchatel,gbc);
+		panelObject.add(labelNamePoluchatel);
+
+		gbc.insets = new Insets(0,0,0,0);
+		gbc.gridx=4;
+		gbc.gridy=0;
+		gbObject.setConstraints(textPoluchatel,gbc);
+		panelObject.add(textPoluchatel);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		
+		//
+		gbc.insets = new Insets(0,0,0,130);
+		gbc.gridx=4;
+		gbc.gridy=1;
+		gbObject.setConstraints(labelCustMail,gbc);
+		panelObject.add(labelCustMail);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(0,0,0,0);
+		gbc.gridx=4;
+		gbc.gridy=1;
+		gbObject.setConstraints(textCustMail,gbc);
+		panelObject.add(textCustMail);
+		gbc.anchor=GridBagConstraints.NORTHWEST;
+	
+		//
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(20,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=3;
+		gbObject.setConstraints(labelCustMail1,gbc);
+		panelObject.add(labelCustMail1);
+	
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=3;
+		gbObject.setConstraints(textCustMail1,gbc);
+		panelObject.add(textCustMail1);
+		
+		
+		//
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(20,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=4;
+		gbObject.setConstraints(labelCustMail2,gbc);
+		panelObject.add(labelCustMail2);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=4;
+		gbObject.setConstraints(textCustMail2,gbc);
+		panelObject.add(textCustMail2);
+		
+		// Добавяне на контролите за етикет  3
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(20,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=5;
+		gbObject.setConstraints(labelCustMail3,gbc);
+		panelObject.add(labelCustMail3);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=5;
+		gbObject.setConstraints(textCustMail3,gbc);
+		panelObject.add(textCustMail3);
+		
+		// 
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(20,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=6;
+		gbObject.setConstraints(labelCustMail4,gbc);
+		panelObject.add(labelCustMail4);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=6;
+		gbObject.setConstraints(textCustMail4,gbc);
+		panelObject.add(textCustMail4);
+		
+		
+		// Buttons:   "Login" & "Clear"
+		
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(120,10,20,33);
+		gbc.gridx=2;
+		gbc.gridy=9;
+		gbObject.setConstraints(Send,gbc);
+		panelObject.add(Send);
+		ValidateAction validateButton = new ValidateAction();
+		Send.addActionListener(validateButton);
+		 
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(120,10,0,0);
+		gbc.gridx=3;
+		gbc.gridy=9;
+		gbObject.setConstraints(Clear,gbc);
+		panelObject.add(Clear);
+		Clear.addActionListener(validateButton);
+		
+		// Subject
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=4;
+		gbc.gridy=2;
+		gbc.insets = new Insets(40,20,40,0);
+		gbObject.setConstraints(textSubject,gbc);
+		panelObject.add(textSubject);
+		
+		gbc.anchor=GridBagConstraints.NORTHWEST;
+		gbc.gridx=4;
+		gbc.gridy=2;
+		gbc.insets = new Insets(40,20,40,0);
+		gbObject.setConstraints(labelSubject,gbc);
+		panelObject.add(labelSubject);
+		
+		// Text area
+ 		
+		gbc.gridx=4;
+		gbc.gridy=3;
+		gbc.gridheight=8;
+		gbc.insets = new Insets(5,20,0,0);
+		gbObject.setConstraints(textArea,gbc);
+		panelObject.add(textArea);
+		
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.insets = new Insets(50,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=7;
+		gbObject.setConstraints(labelUser,gbc);
+		panelObject.add(labelUser);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=7;
+		gbObject.setConstraints(textUser,gbc);
+		panelObject.add(textUser);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+	
+		gbc.insets = new Insets(80,0,0,0);
+		gbc.gridx=1;
+		gbc.gridy=8;
+		gbObject.setConstraints(labelPass,gbc);
+		panelObject.add(labelPass);
+		gbc.anchor=GridBagConstraints.NORTHEAST;
+		gbc.gridx=2;
+		gbc.gridy=8;
+		gbObject.setConstraints(textPass,gbc);
+		panelObject.add(textPass);
+		
+		
+		textUser.setText("your@mail.bg");
+		textPass.setText("qwerty");
+		textMailFrom.setText("your@mail.bg");
+		textCustMail.setText("your@mail.bg");
+		
+	}
+	
+	// Button events
+	class ValidateAction implements ActionListener 	 {
+		public void actionPerformed(ActionEvent evt) {
+			
+		// event source
+			Object obj = evt.getSource();
+		
+			if(obj == Clear) {
+				
+				textPodatel.setText("");
+				textPoluchatel.setText("");
+				textCustMail.setText("");
+				textCustMail1.setText("");
+				textCustMail2.setText("");
+				textCustMail3.setText("");
+				textCustMail4.setText("");
+				textArea.setText("");
+				textSubject.setText("");
+				textMailFrom.setText("");
+				textUser.setText("");
+				textPass.setText("");
+				
+			} 
+			
+			if(obj == Send)  {
+				
+				USER	= textUser.getText();  //USER = "puhiny@mail.bg";
+				USERNAME = encode(USER);
+				
+				PASS	= textPass.getText();  //PASS = "qwerty";
+				PASSWORD = encode(PASS);
+				
+				SUBJECT = textSubject.getText();
+				BODY 	= textArea.getText();
+				
+				MAILFROM  = textMailFrom.getText();
+				RCPT 	  = textCustMail.getText();   //RCPT = "puhiny@mail.bg";
+				
+				if((MAILFROM.length()) == 0) {
+					MAILFROM = textUser.getText();
+				} 
+				if(USER.length() == 0){
+					JOptionPane.showMessageDialog(null,"Моля въведете потребител");
+				}else if(PASS.length() == 0) {
+					JOptionPane.showMessageDialog(null,"Моля въведете парола");
+				} else if(RCPT.length() == 0){
+					JOptionPane.showMessageDialog(null,"Моля въведете e-mail");
+				} else{
+					Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+					Matcher m = p.matcher(RCPT);
+					boolean matchFound = m.matches();
+					if(matchFound){
+					sendLoginInfo();
+			 		JOptionPane.showMessageDialog(null,"Mail send");
+					getAppletContext().showStatus("Finish");
+					} else JOptionPane.showMessageDialog(null,"Моля въведете валиден e-mail");
+				
+				}  
+				
+			}	
+		}
+
+	}  
+	
+	private   void sendLoginInfo() {
+	try {
+		InetAddress ia = InetAddress.getByName(SERVER);
+		s = new Socket(ia, PORT);
+		in = new BufferedReader (new InputStreamReader (
+		s.getInputStream() ));
+		out = new PrintWriter ( new BufferedWriter (new OutputStreamWriter (
+		s.getOutputStream() )), true);
+		
+		getAppletContext().showStatus("Connecting.....");	
+		receive();
+		
+		send("HELO "+ HOST_NAME);
+		
+		send("AUTH Login");
+			
+		send(USERNAME);
+		
+		send(PASSWORD);
+		receive();
+		
+		send("MAIL FROM:<"+ MAILFROM +">");
+		
+		receive();
+		
+		send("RCPT TO:<"+RCPT+">");
+		
+		if(textCustMail1!=null) {
+			RCPT = textCustMail1.getText();
+			send("RCPT TO: <"+RCPT+">");
+		}
+		if(textCustMail2!=null) {
+			RCPT = textCustMail2.getText();
+			send("RCPT TO: <"+RCPT+">");
+		}
+		if(textCustMail3!=null) {
+			RCPT = textCustMail3.getText();
+			send("RCPT TO: <"+RCPT+">");
+		}
+		if(textCustMail4!=null) {
+			RCPT = textCustMail4.getText();
+			send("RCPT TO: <"+RCPT+">");
+		}
+		
+		send("DATA");
+		
+		send("Subject: "+SUBJECT);
+		
+		send("from:" + (textPodatel.getText()) + " <"+MAILFROM+">");
+		
+		send("to:" + (textPoluchatel.getText()) + " <"+(textCustMail.getText())+">");
+		send("");
+		send(BODY);
+		send(".");
+		receive();
+		
+		send("QUIT");
+		receive();
+		
+		textCustMail.setText("");
+		textCustMail1.setText("");
+		textCustMail2.setText("");
+		textCustMail3.setText("");
+		textCustMail4.setText("");
+		textArea.setText("");
+		textSubject.setText("");
+		textMailFrom.setText("");
+	}
+	catch (IOException e) {
+		if (s == null) JOptionPane.showMessageDialog(null,"Server not responding!");
+		else JOptionPane.showMessageDialog(null,"Communication error!");		
+	} finally {
+		try {
+			if (s != null) s.close();
+		} catch(IOException ioe) {}	
+	}
+}
+	
+	//base64 encoder---------------------------------------------------------------------
+	
+	private static char[]    map1 = new char[64];
+	   static {
+	      int i=0;
+	      for (char c='A'; c<='Z'; c++) map1[i++] = c;
+	      for (char c='a'; c<='z'; c++) map1[i++] = c;
+	      for (char c='0'; c<='9'; c++) map1[i++] = c;
+	      map1[i++] = '+'; map1[i++] = '/'; }
+
+	// -----------------------------------------------------------------------------
+	// Mapping table from Base64 characters to 6-bit nibbles.
+	private static byte[]    map2 = new byte[128];
+	   static {
+	      for (int i=0; i<map2.length; i++) map2[i] = -1;
+	      for (int i=0; i<64; i++) map2[map1[i]] = (byte)i; }
+
+	// -----------------------------------------------------------------------------
+	public static String encode (String s) {
+	   return new String(encode(s.getBytes())); }
+
+	// -----------------------------------------------------------------------------
+	public static char[] encode (byte[] in) {
+	   int iLen = in.length;
+	   int oDataLen = (iLen*4+2)/3;       // output length without padding
+	   int oLen = ((iLen+2)/3)*4;         // output length including padding
+	   char[] out = new char[oLen];
+	   int ip = 0;
+	   int op = 0;
+	   while (ip < iLen) {
+	      int i0 = in[ip++] & 0xff;
+	      int i1 = ip < iLen ? in[ip++] & 0xff : 0;
+	      int i2 = ip < iLen ? in[ip++] & 0xff : 0;
+	      int o0 = i0 >>> 2;
+	      int o1 = ((i0 &   3) << 4) | (i1 >>> 4);
+	      int o2 = ((i1 & 0xf) << 2) | (i2 >>> 6);
+	      int o3 = i2 & 0x3F;
+	      out[op++] = map1[o0];
+	      out[op++] = map1[o1];
+	      out[op] = op < oDataLen ? map1[o2] : '='; op++;
+	      out[op] = op < oDataLen ? map1[o3] : '='; op++; }
+	   return out; }
+	
+	//-------------------------------------------------------------------------
+	// Send information to server
+	  void send(String command) throws IOException {
+		getAppletContext().showStatus(command);
+		out.println(command);
+	}
+	// -------------------------------------------------------------------------
+	  	// Server answer
+	  String receive() throws IOException {
+		String answer;
+		answer = in.readLine();
+		getAppletContext().showStatus(answer);
+		JOptionPane.showMessageDialog(null,answer);
+		return answer;
+	}
+}
